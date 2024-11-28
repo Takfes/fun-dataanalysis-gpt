@@ -1,3 +1,10 @@
+.DEFAULT_GOAL := help
+
+.PHONY: help
+help:
+	@uv run python -c "import re; \
+	[[print(f'\033[36m{m[0]:<20}\033[0m {m[1]}') for m in re.findall(r'^([a-zA-Z_-]+):.*?## (.*)$$', open(makefile).read(), re.M)] for makefile in ('$(MAKEFILE_LIST)').strip().split()]"
+
 .PHONY: install
 install: ## Install the virtual environment and install the pre-commit hooks
 	@echo "🚀 Creating virtual environment using uv"
@@ -43,9 +50,50 @@ docs-test: ## Test if documentation can be built without warnings or errors
 docs: ## Build and serve the documentation
 	@uv run mkdocs serve
 
-.PHONY: help
-help:
-	@uv run python -c "import re; \
-	[[print(f'\033[36m{m[0]:<20}\033[0m {m[1]}') for m in re.findall(r'^([a-zA-Z_-]+):.*?## (.*)$$', open(makefile).read(), re.M)] for makefile in ('$(MAKEFILE_LIST)').strip().split()]"
+.PHONY: clean-data
+clean-data: ## Clean up the data directory
+	@echo "🚀 Cleaning up the data directory..."
+	rm -rf ./data/*
+	@echo "✅ Data directory is clean."
 
-.DEFAULT_GOAL := help
+.PHONY: get-amazon-data
+get-amazon-data: ## Download, unzip, and clean up the Amazon dataset
+	@echo "🚀 Downloading Amazon dataset from Kaggle..."
+	kaggle datasets download sujalsuthar/amazon-delivery-dataset -p ./data/amazon
+	@echo "📦 Unzipping the Amazon dataset..."
+	unzip -o ./data/amazon/amazon-delivery-dataset.zip -d ./data/amazon
+	@echo "🧹 Cleaning up ZIP files..."
+	rm ./data/amazon/amazon-delivery-dataset.zip
+	@echo "🔄 Renaming extracted CSV file..."
+	mv ./data/amazon/*.csv ./data/amazon/amazon.csv
+	@echo "✅ amazon dataset is ready in ./data/amazon/amazon.csv"
+
+.PHONY: get-zomato-data
+get-zomato-data: ## Download, unzip, and clean up the Zomato dataset
+	@echo "🚀 Downloading Zomato dataset from Kaggle..."
+	kaggle datasets download saurabhbadole/zomato-delivery-operations-analytics-dataset -p ./data/zomato
+	@echo "📦 Unzipping the Zomato dataset..."
+	unzip -o ./data/zomato/zomato-delivery-operations-analytics-dataset.zip -d ./data/zomato
+	@echo "🧹 Cleaning up ZIP files..."
+	rm ./data/zomato/zomato-delivery-operations-analytics-dataset.zip
+	@echo "🔄 Renaming extracted CSV file..."
+	mv ./data/zomato/*.csv ./data/zomato/zomato.csv
+	@echo "✅ zomato dataset is ready in ./data/zomato/zomato.csv"
+
+.PHONY: load-amazon-data
+load-amazon-data: ## Load the amazon dataset into the database
+	@echo "🚀 Loading amazon dataset into the database..."
+	@uv run python scripts/load_to_duckdb.py --data amazon
+	@echo "✅ amazon dataset is loaded into the database."
+
+.PHONY: load-zomato-data
+load-zomato-data: ## Load the zomato dataset into the database
+	@echo "🚀 Loading zomato dataset into the database..."
+	@uv run python scripts/load_to_duckdb.py --data zomato
+	@echo "✅ zomato dataset is loaded into the database."
+
+.PHONY: get-load-amazon-data
+get-load-amazon-data: get-amazon-data load-amazon-data ## Download, unzip, and load the amazon dataset into the database
+
+.PHONY: get-load-zomato-data
+get-load-zomato-data: get-zomato-data load-zomato-data ## Download, unzip, and load the zomato dataset into the database
