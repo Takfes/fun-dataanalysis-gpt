@@ -1,0 +1,39 @@
+body {
+  background-color: #0a1a2f;
+  color: white;
+}
+
+header {
+  background-color: #00cfff;
+  height: 50px;
+}
+
+button {
+  background-color: #5a7a8a;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #00cfff;
+}
+
+input[type="text"],
+textarea {
+  background-color: #2f4b61;
+  color: white;
+  border: 1px solid #5a7a8a;
+  border-radius: 5px;
+  padding: 10px;
+  width: 100%;
+}
+
+button.new {
+  background-color: #00cfff;
+  color: black;
+  font-weight: bold;
+}

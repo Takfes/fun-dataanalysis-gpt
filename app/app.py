@@ -1,11 +1,13 @@
 import pandas as pd
 import streamlit as st
+from utils import load_css
 
 from dapgpt.agent import DataAnalysisAgent
 
 # from src.agent import DataAnalysisAgent
 
 st.set_page_config(page_title="AI Data Analyst", layout="wide")
+# st.markdown(load_css(), unsafe_allow_html=True)
 
 
 def main():

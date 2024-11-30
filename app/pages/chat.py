@@ -1,6 +1,9 @@
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from utils import load_css
+
+# st.markdown(load_css(), unsafe_allow_html=True)
 
 
 def init_chat():
