@@ -4,6 +4,7 @@ from pprint import pprint
 from langchain.chains import create_sql_query_chain
 from langchain.prompts import PromptTemplate
 from langchain_community.agent_toolkits import create_sql_agent
+from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_community.utilities import SQLDatabase
 from langchain_core.output_parsers import StrOutputParser
@@ -44,7 +45,7 @@ db.run("SELECT * FROM amazon LIMIT 10;")
 chain = create_sql_query_chain(llm, db)
 chain.get_prompts()[0].pretty_print()
 # response = chain.invoke({"question": "How many rows are there in the zomato table?"})
-response = chain.invoke({"question": "How many entries per date in the amazon table?"})
+response = chain.invoke({"question": "How many entries per date in the amazon table? Don't limit the results"})
 # response holds the query object
 print(response)
 # here is how to run the query - manually
@@ -101,67 +102,130 @@ chain.invoke({"question": "How many entries per date in the amazon table?"})
 # Create SQL Agent
 # ==============================================================
 """
-agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, top_k=100)
+# agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True, top_k=100)
 
-# To check the prompt of the agent, you can use the following code:
-agent_executor.agent.runnable.get_prompts()[0].pretty_print()
+my_suffix = """
+    As a final step, I MUST ALWAYS respond with JUST the results - NOTHING ELSE - in a json format.
+    """
+
+my_suffix = """
+    I should look at the tables in the database to see what I can query.
+    Then I should query the schema of the most relevant tables.\n
+    As a final step, I MUST ALWAYS respond with JUST the results - NOTHING ELSE - in a json format.
+    """
+
+my_suffix = """
+    I should look at the tables in the database to see what I can query.
+    Then I should query the schema of the most relevant tables.\n
+    As a final step, I MUST ALWAYS respond with JUST the RAW RESULTS WITHOUT any further processing or ADDING extra text.
+    """
 
 message = "What's the count and agent rating by category in the amazon dataset? Order results in descending order based on count"
+
+agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True, top_k=100, suffix=my_suffix)
+# To check the prompt of the agent, you can use the following code:
+agent_executor.agent.runnable.get_prompts()[0].pretty_print()
 response = agent_executor.invoke({"input": message})
 print(response["output"])
 
 """
 # ==============================================================
-# Fiddling with the SQL Agent
+# Test a zero-shot agent
 # ==============================================================
 """
-custom_prompt = PromptTemplate(
-    input_variables=["input", "agent_scratchpad"],
-    template="""
-    ================================ System Message ================================
 
-    You are an agent designed to interact with a SQL database.
-    Given an input question, create a syntactically correct duckdb query to run, then look at the results of the query and return the answer.
-    Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most 100 results.
-    You can order the results by a relevant column to return the most interesting examples in the database.
-    Never query for all the columns from a specific table, only ask for the relevant columns given the question.
-    You have access to tools for interacting with the database.
-    Only use the below tools. Only use the information returned by the below tools to construct your final answer.
-    You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+# Part 2: Prepare the sql prompt
+MSSQL_AGENT_PREFIX = """
 
-    DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
+You are an agent designed to interact with a SQL database.
+## Instructions:
+- Given an input question, create a syntactically correct {dialect} query
+to run, then look at the results of the query and return the answer.
+- Unless the user specifies a specific number of examples they wish to
+obtain, **ALWAYS** limit your query to at most {top_k} results.
+- You can order the results by a relevant column to return the most
+interesting examples in the database.
+- Never query for all the columns from a specific table, only ask for
+the relevant columns given the question.
+- You have access to tools for interacting with the database.
+- You MUST double check your query before executing it.If you get an error
+while executing a query,rewrite the query and try again.
+- DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.)
+to the database.
+- DO NOT MAKE UP AN ANSWER OR USE PRIOR KNOWLEDGE, ONLY USE THE RESULTS
+OF THE CALCULATIONS YOU HAVE DONE.
+- Your response should be in Markdown. However, **when running  a SQL Query
+in "Action Input", do not include the markdown backticks**.
+Those are only for formatting the response, not for executing the command.
+- ALWAYS, as part of your final answer, explain how you got to the answer
+on a section that starts with: "Explanation:". Include the SQL query as
+part of the explanation section.
+- If the question does not seem related to the database, just return
+"I don\'t know" as the answer.
+- Only use the below tools. Only use the information returned by the
+below tools to construct your query and final answer.
+- Do not make up table names, only use the tables returned by any of the
+tools below.
+- as part of your final answer, please include the SQL query you used in json format or code format
 
-    You MUST return the results directly as raw data without any additional explanation or post-processing.
+## Tools:
 
-    If the question does not seem related to the database, just return "I don't know" as the answer.
+"""
 
+MSSQL_AGENT_FORMAT_INSTRUCTIONS = """
 
-    ================================ Human Message =================================
+## Use the following format:
 
-    {input}
+Question: the input question you must answer.
+Thought: you should always think about what to do.
+Action: the action to take, should be one of [{tool_names}].
+Action Input: the input to the action.
+Observation: the result of the action.
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer.
+Final Answer: the final answer to the original input question.
 
-    ================================== Ai Message ==================================
+Example of Final Answer:
+<=== Beginning of example
 
-    I should look at the tables in the database to see what I can query.  Then I should query the schema of the most relevant tables.
+Action: query_sql_db
+Action Input:
+SELECT TOP (10) [base_salary], [grade]
+FROM salaries_2023
 
-    ============================= Messages Placeholder =============================
+WHERE state = 'Division'
 
-    {agent_scratchpad}
-    """,
+Observation:
+[(27437.0,), (27088.0,), (26762.0,), (26521.0,), (26472.0,), (26421.0,), (26408.0,)]
+Thought:I now know the final answer
+Final Answer: There were 27437 workers making 100,000.
+
+Explanation:
+I queried the `xyz` table for the `salary` column where the department
+is 'IGM' and the date starts with '2020'. The query returned a list of tuples
+with the bazse salary for each day in 2020. To answer the question,
+I took the sum of all the salaries in the list, which is 27437.
+I used the following query
+
+```sql
+SELECT [salary] FROM xyztable WHERE department = 'IGM' AND date LIKE '2020%'"
+```
+===> End of Example
+
+"""
+
+toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+
+agent_executor = create_sql_agent(
+    prefix=MSSQL_AGENT_PREFIX,
+    format_instructions=MSSQL_AGENT_FORMAT_INSTRUCTIONS,
+    llm=llm,
+    toolkit=toolkit,
+    top_k=30,
+    verbose=True,
 )
-
-agent_executor = create_sql_agent(llm=llm, db=db, agent_type="openai-tools", prompt=custom_prompt, verbose=True)
-
 
 # To check the prompt of the agent, you can use the following code:
 agent_executor.agent.runnable.get_prompts()[0].pretty_print()
-# [x for x in dir(agent_executor.agent.runnable) if not x.startswith("_")]
-
-
-# message = "What's the count and agent rating by category in the amazon dataset? Order results in descending order based on count"
-# message = "What's the number of sales per order date in the amazon dataset? Order results in ascending order based on order date. if more than 100 lines, return 100 first lines"
-message = "what's the average delivery time per traffic, area and order_date for the amazon dataset?"
-
-response = agent_executor.invoke({"input": message})
-
+response = agent_executor.invoke(message)
 print(response["output"])

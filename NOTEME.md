@@ -5,6 +5,16 @@
 - [Dataset : Logistics Company Dataset For SQL](https://www.kaggle.com/datasets/aashokaacharya/logistics-company-dataset-for-sql?select=employee_manages_shipment.csv)
 - [API reference - langchain](https://python.langchain.com/api_reference/reference.html)
 
+### TODOS
+
+- langgraph studio
+- configurations file and pyprojroot package
+
+### DATAFRAMES + CSV AGENTS
+
+- [udemy langchain pandas agent](https://titancement.udemy.com/course/database-agents/learn/lecture/44486568#overview)
+- [youtube langchain pandas agent](https://www.youtube.com/watch?v=ZIfzpmO8MdA)
+
 ### RAG ON TEXT DATA
 
 - knowledge base consisting of md, pdf files - rag through vector database to provide agent information
@@ -26,7 +36,6 @@
 ### RAG ON TABULAR DATA (MIEH!)
 
 - [rag on tabular video](https://youtu.be/ZtltjSjFPDg?si=xebvDt4sthLfLokv&t=444)
--
 
 ### SQL AGENT
 
@@ -37,12 +46,16 @@
 - [create sql agent video](https://youtu.be/ZtltjSjFPDg?si=-7Y6jyZ2j0bkMcb4&t=1731)
 - [create sqsl agent github](https://github.com/Farzad-R/Advanced-QA-and-RAG-Series/blob/main/Q%26A-and-RAG-with-SQL-and-TabularData/explore/3_query_and_QA_sqldb.ipynb)
 
-### THINGS TO TRY
+### VISUALIZATION WITH LANGCHAIN
 
 - insights from graph [gpt-4-vision-preview model](https://www.youtube.com/watch?v=LO8c7oXG32M)
-- [text-to-sql-visualization](https://www.youtube.com/watch?v=LRcjlXL9hPA) this brings an agent that reads the llm response and decides which is the best visualization to present the results
-- langgraph studio
-- configurations file and pyprojroot package
+- [dash chat visual through code](https://www.youtube.com/watch?v=Phix-s5NPUA)
+
+- [datavisualization_langgraph video](https://www.youtube.com/watch?v=LRcjlXL9hPA) this brings an agent that reads the llm response and decides which is the best visualization to present the results
+- [datavisualization_langgraph repo](https://github.com/DhruvAtreja/datavisualization_langgraph?tab=readme-ov-file)
+
 - [msft lida visualization](https://www.youtube.com/watch?v=U9K1Cu45nMQ)
 - [chat2plot](https://github.com/nyanp/chat2plot?utm_source=chatgpt.com)
-- [dash chat visual through code](https://www.youtube.com/watch?v=Phix-s5NPUA)
+
+- [talk2csv video](https://www.youtube.com/watch?v=eOP_i4Qn8m4)
+- [talk2csv repo](https://github.com/GaoDalie/Talk_with_CSV/tree/main)
