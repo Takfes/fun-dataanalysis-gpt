@@ -84,12 +84,14 @@ get-zomato-data: ## Download, unzip, and clean up the Zomato dataset
 load-amazon-data: ## Load the amazon dataset into the database
 	@echo "🚀 Loading amazon dataset into the database..."
 	@uv run python scripts/load_to_duckdb.py --data amazon
+	@uv run python scripts/load_to_sqlite.py --data amazon
 	@echo "✅ amazon dataset is loaded into the database."
 
 .PHONY: load-zomato-data
 load-zomato-data: ## Load the zomato dataset into the database
 	@echo "🚀 Loading zomato dataset into the database..."
 	@uv run python scripts/load_to_duckdb.py --data zomato
+	@uv run python scripts/load_to_sqlite.py --data zomato
 	@echo "✅ zomato dataset is loaded into the database."
 
 .PHONY: get-load-amazon-data

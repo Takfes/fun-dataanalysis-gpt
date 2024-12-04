@@ -157,16 +157,13 @@ OF THE CALCULATIONS YOU HAVE DONE.
 - Your response should be in Markdown. However, **when running  a SQL Query
 in "Action Input", do not include the markdown backticks**.
 Those are only for formatting the response, not for executing the command.
-- ALWAYS, as part of your final answer, explain how you got to the answer
-on a section that starts with: "Explanation:". Include the SQL query as
-part of the explanation section.
 - If the question does not seem related to the database, just return
 "I don\'t know" as the answer.
 - Only use the below tools. Only use the information returned by the
 below tools to construct your query and final answer.
 - Do not make up table names, only use the tables returned by any of the
 tools below.
-- as part of your final answer, please include the SQL query you used in json format or code format
+- As part of your final answer, **YOU MUST ALWAYS** include the SQL query you used in json format or code format
 
 ## Tools:
 
@@ -192,20 +189,12 @@ Action: query_sql_db
 Action Input:
 SELECT TOP (10) [base_salary], [grade]
 FROM salaries_2023
-
 WHERE state = 'Division'
 
 Observation:
 [(27437.0,), (27088.0,), (26762.0,), (26521.0,), (26472.0,), (26421.0,), (26408.0,)]
 Thought:I now know the final answer
-Final Answer: There were 27437 workers making 100,000.
-
-Explanation:
-I queried the `xyz` table for the `salary` column where the department
-is 'IGM' and the date starts with '2020'. The query returned a list of tuples
-with the bazse salary for each day in 2020. To answer the question,
-I took the sum of all the salaries in the list, which is 27437.
-I used the following query
+Final Answer:
 
 ```sql
 SELECT [salary] FROM xyztable WHERE department = 'IGM' AND date LIKE '2020%'"
@@ -227,5 +216,8 @@ agent_executor = create_sql_agent(
 
 # To check the prompt of the agent, you can use the following code:
 agent_executor.agent.runnable.get_prompts()[0].pretty_print()
+
+message = "What's the average rating and average delivery time per day in the amazon dataset? Order the results by date ascending"
+
 response = agent_executor.invoke(message)
 print(response["output"])
